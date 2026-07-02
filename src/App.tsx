@@ -148,6 +148,74 @@ function App() {
     setMesas((atuais) => alterarStatusMesa(atuais, mesa.id, status))
   }
 
+  function handleAdicionarMesa(
+    payload: Pick<
+      Mesa,
+      | 'numero_mesa'
+      | 'nome_ou_identificacao'
+      | 'capacidade_maxima'
+      | 'quantidade_ideal_pessoas'
+      | 'status_atual'
+      | 'setor_ou_area'
+      | 'observacoes'
+    >,
+  ) {
+    const agora = new Date().toISOString()
+
+    setMesas((atuais) =>
+      [
+        ...atuais,
+        {
+          id: crypto.randomUUID(),
+          restaurante_id: restauranteMock.id,
+          criado_em: agora,
+          atualizado_em: agora,
+          ...payload,
+        },
+      ].sort((a, b) => a.numero_mesa - b.numero_mesa),
+    )
+  }
+
+  function handleEditarMesa(
+    mesaId: string,
+    payload: Pick<
+      Mesa,
+      | 'numero_mesa'
+      | 'nome_ou_identificacao'
+      | 'capacidade_maxima'
+      | 'quantidade_ideal_pessoas'
+      | 'status_atual'
+      | 'setor_ou_area'
+      | 'observacoes'
+    >,
+  ) {
+    const agora = new Date().toISOString()
+
+    setMesas((atuais) =>
+      atuais
+        .map((mesa) => (mesa.id === mesaId ? { ...mesa, ...payload, atualizado_em: agora } : mesa))
+        .sort((a, b) => a.numero_mesa - b.numero_mesa),
+    )
+  }
+
+  function handleRemoverMesa(mesaId: string) {
+    setMesas((atuais) => atuais.filter((mesa) => mesa.id !== mesaId))
+    setChamados((atuais) => atuais.filter((chamado) => chamado.mesa_id !== mesaId))
+    setClientes((atuais) =>
+      atuais.map((cliente) =>
+        cliente.mesa_destinada_id === mesaId
+          ? {
+              ...cliente,
+              mesa_destinada_id: undefined,
+              numero_mesa_destinada: undefined,
+              atualizado_em: new Date().toISOString(),
+            }
+          : cliente,
+      ),
+    )
+    if (mesaPronta?.id === mesaId) setMesaPronta(undefined)
+  }
+
   function renderPerfil() {
     if (perfil === 'cliente') {
       return (
@@ -188,6 +256,9 @@ function App() {
           configuracao={configuracao}
           historico={historico}
           onConfigurar={(patch) => setConfiguracao((atual) => configurarRegrasDeEncaixe(atual, patch))}
+          onAdicionarMesa={handleAdicionarMesa}
+          onEditarMesa={handleEditarMesa}
+          onRemoverMesa={handleRemoverMesa}
         />
       )
 

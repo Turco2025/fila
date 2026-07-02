@@ -58,7 +58,7 @@ src/
 - Recepcao visualiza fila, mesas prontas, sugestao automatica de cliente compativel e chamada.
 - Ao chamar um cliente, a recepcao e o cliente acompanham um timer de 5 minutos; ao zerar, a recepcao recebe a opcao de excluir/remover o cliente da fila.
 - Garcom altera status das mesas, marca mesa em preparo, marca mesa pronta e confirma cliente sentado.
-- Administrador visualiza relatorios, mesas, funcionarios e configura tolerancias de encaixe.
+- Administrador visualiza relatorios, cadastra, edita e remove mesas, gerencia funcionarios e configura tolerancias de encaixe.
 
 ## Push notification com VAPID
 

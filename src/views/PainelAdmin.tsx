@@ -1,6 +1,28 @@
-import type { ConfiguracoesFila, Funcionario, Mesa, HistoricoAtendimento } from '../types/domain'
+import { useMemo, useState, type FormEvent } from 'react'
 import { BadgeStatus } from '../components/BadgeStatus'
 import { DashboardRelatorios } from '../components/DashboardRelatorios'
+import type { ConfiguracoesFila, Funcionario, HistoricoAtendimento, Mesa, MesaStatus } from '../types/domain'
+
+type MesaPayload = Pick<
+  Mesa,
+  | 'numero_mesa'
+  | 'nome_ou_identificacao'
+  | 'capacidade_maxima'
+  | 'quantidade_ideal_pessoas'
+  | 'status_atual'
+  | 'setor_ou_area'
+  | 'observacoes'
+>
+
+interface MesaFormState {
+  numero_mesa: string
+  nome_ou_identificacao: string
+  capacidade_maxima: string
+  quantidade_ideal_pessoas: string
+  status_atual: MesaStatus
+  setor_ou_area: string
+  observacoes: string
+}
 
 interface PainelAdminProps {
   mesas: Mesa[]
@@ -8,10 +30,96 @@ interface PainelAdminProps {
   configuracao: ConfiguracoesFila
   historico: HistoricoAtendimento[]
   onConfigurar: (patch: Partial<ConfiguracoesFila>) => void
+  onAdicionarMesa: (payload: MesaPayload) => void
+  onEditarMesa: (mesaId: string, payload: MesaPayload) => void
+  onRemoverMesa: (mesaId: string) => void
 }
 
-export function PainelAdmin({ mesas, funcionarios, configuracao, historico, onConfigurar }: PainelAdminProps) {
+const statusMesa: MesaStatus[] = [
+  'livre',
+  'ocupada',
+  'conta solicitada',
+  'em pagamento',
+  'em preparo',
+  'pronta',
+  'reservada',
+]
+
+const formularioVazio: MesaFormState = {
+  numero_mesa: '',
+  nome_ou_identificacao: '',
+  capacidade_maxima: '',
+  quantidade_ideal_pessoas: '',
+  status_atual: 'livre',
+  setor_ou_area: '',
+  observacoes: '',
+}
+
+export function PainelAdmin({
+  mesas,
+  funcionarios,
+  configuracao,
+  historico,
+  onConfigurar,
+  onAdicionarMesa,
+  onEditarMesa,
+  onRemoverMesa,
+}: PainelAdminProps) {
   const linkClienteQr = `${window.location.origin}/#/cliente/rest-1`
+  const [mesaEmEdicaoId, setMesaEmEdicaoId] = useState<string>()
+  const [formulario, setFormulario] = useState<MesaFormState>(formularioVazio)
+  const [erroFormulario, setErroFormulario] = useState('')
+  const mesasOrdenadas = useMemo(
+    () => [...mesas].sort((a, b) => a.numero_mesa - b.numero_mesa),
+    [mesas],
+  )
+
+  function limparFormulario() {
+    setMesaEmEdicaoId(undefined)
+    setFormulario(formularioVazio)
+    setErroFormulario('')
+  }
+
+  function carregarMesa(mesa: Mesa) {
+    setMesaEmEdicaoId(mesa.id)
+    setErroFormulario('')
+    setFormulario({
+      numero_mesa: String(mesa.numero_mesa),
+      nome_ou_identificacao: mesa.nome_ou_identificacao,
+      capacidade_maxima: String(mesa.capacidade_maxima),
+      quantidade_ideal_pessoas: String(mesa.quantidade_ideal_pessoas),
+      status_atual: mesa.status_atual,
+      setor_ou_area: mesa.setor_ou_area,
+      observacoes: mesa.observacoes,
+    })
+  }
+
+  function removerMesa(mesa: Mesa) {
+    const confirmar = window.confirm(`Remover a Mesa ${mesa.numero_mesa}?`)
+
+    if (!confirmar) return
+
+    onRemoverMesa(mesa.id)
+    if (mesaEmEdicaoId === mesa.id) limparFormulario()
+  }
+
+  function salvarMesa(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const payload = montarPayloadMesa(formulario)
+    if (!payload) {
+      setErroFormulario('Preencha numero, identificacao, capacidade, quantidade ideal e setor.')
+      return
+    }
+
+    if (mesaEmEdicaoId) {
+      onEditarMesa(mesaEmEdicaoId, payload)
+    } else {
+      onAdicionarMesa(payload)
+    }
+
+    limparFormulario()
+  }
 
   return (
     <main className="flex-1 bg-slate-50 p-4 sm:p-6">
@@ -44,91 +152,247 @@ export function PainelAdmin({ mesas, funcionarios, configuracao, historico, onCo
           </div>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1fr_0.8fr]">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-xl font-black text-slate-950">Cadastro e edicao de mesas</h3>
-              <button type="button" className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">
-                Nova mesa
+        <section className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+          <form className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" onSubmit={salvarMesa}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-wide text-teal-700">
+                  {mesaEmEdicaoId ? 'Editar mesa' : 'Cadastrar mesa'}
+                </p>
+                <h3 className="mt-1 text-xl font-black text-slate-950">Dados da mesa</h3>
+              </div>
+              <button
+                type="button"
+                onClick={limparFormulario}
+                className="rounded-lg bg-slate-100 px-4 py-3 text-sm font-black text-slate-700"
+              >
+                Novo cadastro
               </button>
             </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <CampoTexto
+                label="Numero da mesa"
+                type="number"
+                value={formulario.numero_mesa}
+                onChange={(value) => setFormulario((atual) => ({ ...atual, numero_mesa: value }))}
+              />
+              <CampoTexto
+                label="Identificacao"
+                value={formulario.nome_ou_identificacao}
+                onChange={(value) => setFormulario((atual) => ({ ...atual, nome_ou_identificacao: value }))}
+              />
+              <CampoTexto
+                label="Capacidade maxima"
+                type="number"
+                value={formulario.capacidade_maxima}
+                onChange={(value) => setFormulario((atual) => ({ ...atual, capacidade_maxima: value }))}
+              />
+              <CampoTexto
+                label="Quantidade ideal"
+                type="number"
+                value={formulario.quantidade_ideal_pessoas}
+                onChange={(value) => setFormulario((atual) => ({ ...atual, quantidade_ideal_pessoas: value }))}
+              />
+              <label className="block text-sm font-bold text-slate-700">
+                Status
+                <select
+                  value={formulario.status_atual}
+                  onChange={(event) =>
+                    setFormulario((atual) => ({ ...atual, status_atual: event.target.value as MesaStatus }))
+                  }
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-slate-950 outline-none focus:border-teal-500"
+                >
+                  {statusMesa.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <CampoTexto
+                label="Setor ou area"
+                value={formulario.setor_ou_area}
+                onChange={(value) => setFormulario((atual) => ({ ...atual, setor_ou_area: value }))}
+              />
+              <label className="block text-sm font-bold text-slate-700 sm:col-span-2">
+                Observacoes
+                <textarea
+                  value={formulario.observacoes}
+                  onChange={(event) => setFormulario((atual) => ({ ...atual, observacoes: event.target.value }))}
+                  rows={3}
+                  className="mt-1 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-slate-950 outline-none focus:border-teal-500"
+                />
+              </label>
+            </div>
+
+            {erroFormulario && <p className="mt-3 text-sm font-black text-rose-700">{erroFormulario}</p>}
+
+            <button
+              type="submit"
+              className="mt-5 w-full rounded-lg bg-teal-600 px-5 py-4 text-sm font-black text-white hover:bg-teal-700"
+            >
+              {mesaEmEdicaoId ? 'Salvar alteracoes' : 'Cadastrar mesa'}
+            </button>
+          </form>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <h3 className="text-xl font-black text-slate-950">Mesas cadastradas</h3>
+              <p className="text-sm font-bold text-slate-500">{mesasOrdenadas.length} mesas</p>
+            </div>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[720px] border-separate border-spacing-y-2 text-left text-sm">
+              <table className="w-full min-w-[820px] border-separate border-spacing-y-2 text-left text-sm">
                 <thead className="text-slate-500">
                   <tr>
                     <th className="px-3 py-2">Numero</th>
                     <th className="px-3 py-2">Identificacao</th>
                     <th className="px-3 py-2">Capacidade</th>
+                    <th className="px-3 py-2">Ideal</th>
                     <th className="px-3 py-2">Setor</th>
                     <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2 text-right">Acoes</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {mesas.map((mesa) => (
+                  {mesasOrdenadas.map((mesa) => (
                     <tr key={mesa.id} className="bg-slate-50">
                       <td className="rounded-l-lg px-3 py-3 font-black text-slate-950">{mesa.numero_mesa}</td>
                       <td className="px-3 py-3">{mesa.nome_ou_identificacao}</td>
                       <td className="px-3 py-3">{mesa.capacidade_maxima}</td>
+                      <td className="px-3 py-3">{mesa.quantidade_ideal_pessoas}</td>
                       <td className="px-3 py-3">{mesa.setor_ou_area}</td>
-                      <td className="rounded-r-lg px-3 py-3">
+                      <td className="px-3 py-3">
                         <BadgeStatus status={mesa.status_atual} />
+                      </td>
+                      <td className="rounded-r-lg px-3 py-3">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => carregarMesa(mesa)}
+                            className="rounded-lg bg-white px-3 py-2 text-xs font-black text-slate-700 ring-1 ring-slate-200"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removerMesa(mesa)}
+                            className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-black text-rose-700 ring-1 ring-rose-100"
+                          >
+                            Remover
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
+                  {mesasOrdenadas.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="rounded-lg bg-slate-50 px-3 py-8 text-center font-bold text-slate-500">
+                        Nenhuma mesa cadastrada.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
+        </section>
 
-          <div className="space-y-4">
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <h3 className="text-xl font-black text-slate-950">Regras de encaixe</h3>
-              <div className="mt-4 space-y-3">
-                <Toggle
-                  label="Permitir 2 pessoas em mesa de 4"
-                  checked={configuracao.permitir_2_em_4}
-                  onChange={(checked) => onConfigurar({ permitir_2_em_4: checked })}
+        <section className="grid gap-4 xl:grid-cols-[0.8fr_1fr]">
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <h3 className="text-xl font-black text-slate-950">Regras de encaixe</h3>
+            <div className="mt-4 space-y-3">
+              <Toggle
+                label="Permitir 2 pessoas em mesa de 4"
+                checked={configuracao.permitir_2_em_4}
+                onChange={(checked) => onConfigurar({ permitir_2_em_4: checked })}
+              />
+              <Toggle
+                label="Permitir 4 pessoas em mesa de 6"
+                checked={configuracao.permitir_4_em_6}
+                onChange={(checked) => onConfigurar({ permitir_4_em_6: checked })}
+              />
+              <Toggle
+                label="Permitir 6 pessoas em mesa de 8"
+                checked={configuracao.permitir_6_em_8}
+                onChange={(checked) => onConfigurar({ permitir_6_em_8: checked })}
+              />
+              <label className="block text-sm font-bold text-slate-700">
+                Diferenca maxima permitida
+                <input
+                  type="range"
+                  min="0"
+                  max="4"
+                  value={configuracao.diferenca_maxima_permitida}
+                  onChange={(event) => onConfigurar({ diferenca_maxima_permitida: Number(event.target.value) })}
+                  className="mt-2 w-full accent-teal-600"
                 />
-                <Toggle
-                  label="Permitir 4 pessoas em mesa de 6"
-                  checked={configuracao.permitir_4_em_6}
-                  onChange={(checked) => onConfigurar({ permitir_4_em_6: checked })}
-                />
-                <Toggle
-                  label="Permitir 6 pessoas em mesa de 8"
-                  checked={configuracao.permitir_6_em_8}
-                  onChange={(checked) => onConfigurar({ permitir_6_em_8: checked })}
-                />
-                <label className="block text-sm font-bold text-slate-700">
-                  Diferenca maxima permitida
-                  <input
-                    type="range"
-                    min="0"
-                    max="4"
-                    value={configuracao.diferenca_maxima_permitida}
-                    onChange={(event) => onConfigurar({ diferenca_maxima_permitida: Number(event.target.value) })}
-                    className="mt-2 w-full accent-teal-600"
-                  />
-                  <span className="mt-1 block text-slate-950">{configuracao.diferenca_maxima_permitida} lugares</span>
-                </label>
-              </div>
+                <span className="mt-1 block text-slate-950">{configuracao.diferenca_maxima_permitida} lugares</span>
+              </label>
             </div>
+          </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <h3 className="text-xl font-black text-slate-950">Funcionarios</h3>
-              <div className="mt-4 space-y-2">
-                {funcionarios.map((funcionario) => (
-                  <div key={funcionario.id} className="rounded-lg bg-slate-50 p-3">
-                    <p className="font-black text-slate-950">{funcionario.nome}</p>
-                    <p className="text-sm font-semibold text-slate-500">{funcionario.cargo}</p>
-                  </div>
-                ))}
-              </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <h3 className="text-xl font-black text-slate-950">Funcionarios</h3>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              {funcionarios.map((funcionario) => (
+                <div key={funcionario.id} className="rounded-lg bg-slate-50 p-3">
+                  <p className="font-black text-slate-950">{funcionario.nome}</p>
+                  <p className="text-sm font-semibold text-slate-500">{funcionario.cargo}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
       </div>
     </main>
+  )
+}
+
+function montarPayloadMesa(formulario: MesaFormState): MesaPayload | undefined {
+  const numeroMesa = Number(formulario.numero_mesa)
+  const capacidadeMaxima = Number(formulario.capacidade_maxima)
+  const quantidadeIdeal = Number(formulario.quantidade_ideal_pessoas)
+  const identificacao = formulario.nome_ou_identificacao.trim()
+  const setor = formulario.setor_ou_area.trim()
+
+  if (!numeroMesa || !capacidadeMaxima || !quantidadeIdeal || !identificacao || !setor) {
+    return undefined
+  }
+
+  return {
+    numero_mesa: numeroMesa,
+    nome_ou_identificacao: identificacao,
+    capacidade_maxima: capacidadeMaxima,
+    quantidade_ideal_pessoas: Math.min(quantidadeIdeal, capacidadeMaxima),
+    status_atual: formulario.status_atual,
+    setor_ou_area: setor,
+    observacoes: formulario.observacoes.trim(),
+  }
+}
+
+function CampoTexto({
+  label,
+  value,
+  onChange,
+  type = 'text',
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  type?: 'text' | 'number'
+}) {
+  return (
+    <label className="block text-sm font-bold text-slate-700">
+      {label}
+      <input
+        type={type}
+        min={type === 'number' ? '1' : undefined}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-3 text-slate-950 outline-none focus:border-teal-500"
+      />
+    </label>
   )
 }
 
