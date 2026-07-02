@@ -38,7 +38,7 @@ interface ChamadaPendente {
 }
 
 function App() {
-  const [perfil, setPerfil] = useState<Perfil>('cliente')
+  const [perfil, setPerfil] = useState<Perfil>('recepcao')
   const [clientes, setClientes] = useState<FilaCliente[]>(filaClientesMock)
   const [mesas, setMesas] = useState<Mesa[]>(mesasMock)
   const [chamados, setChamados] = useState<Chamado[]>(chamadosMock)
@@ -52,6 +52,7 @@ function App() {
     () => clientes.find((cliente) => cliente.id === clienteAtualId),
     [clienteAtualId, clientes],
   )
+  const telaPublicaCliente = isTelaPublicaCliente()
 
   function handleAdicionarCliente(payload: Pick<FilaCliente, 'nome_cliente' | 'whatsapp' | 'quantidade_pessoas' | 'observacoes'>) {
     const proximaFila = adicionarClienteNaFila(clientes, payload, restauranteMock.id)
@@ -200,8 +201,18 @@ function App() {
 
   return (
     <>
-      <Header active={perfil} onChange={setPerfil} />
-      {renderPerfil()}
+      {telaPublicaCliente ? (
+        <TelaClienteQRCode
+          restaurante={restauranteMock}
+          clienteAtual={clienteAtual}
+          onAdicionar={handleAdicionarCliente}
+        />
+      ) : (
+        <>
+          <Header active={perfil} onChange={setPerfil} />
+          {renderPerfil()}
+        </>
+      )}
       {chamadaPendente && (
         <ModalChamarCliente
           cliente={chamadaPendente.cliente}
@@ -218,6 +229,16 @@ function App() {
         />
       )}
     </>
+  )
+}
+
+function isTelaPublicaCliente(): boolean {
+  const params = new URLSearchParams(window.location.search)
+
+  return (
+    window.location.hash.startsWith('#/cliente') ||
+    window.location.pathname.startsWith('/cliente') ||
+    params.get('view') === 'cliente'
   )
 }
 

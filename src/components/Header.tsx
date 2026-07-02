@@ -7,7 +7,6 @@ interface HeaderProps {
 }
 
 const tabs: Array<{ id: Perfil; label: string }> = [
-  { id: 'cliente', label: 'Cliente QR' },
   { id: 'recepcao', label: 'Recepcao' },
   { id: 'garcom', label: 'Garcom' },
   { id: 'admin', label: 'Admin' },

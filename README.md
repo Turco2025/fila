@@ -21,6 +21,11 @@ Depois acesse `http://127.0.0.1:5173`. O comando `pnpm dev` sobe dois processos:
 - Vite em `http://127.0.0.1:5173`
 - API de push em `http://127.0.0.1:8787`
 
+URLs principais:
+
+- Area da equipe: `http://127.0.0.1:5173`
+- Tela publica isolada do cliente para QR Code: `http://127.0.0.1:5173/#/cliente/rest-1`
+
 > Neste ambiente, o registry apresentou erro de certificado durante a instalacao inicial. Se isso acontecer em outra maquina, corrija a cadeia de certificados do Node/npm antes de instalar dependencias.
 
 ## Estrutura
@@ -48,6 +53,7 @@ src/
 ## Fluxos implementados
 
 - Cliente entra via QR Code, preenche cadastro rapido e acompanha o status.
+- A URL do QR Code abre uma tela publica isolada, sem abas ou acesso aos paineis internos.
 - Cliente pode ativar Web Push no navegador para receber aviso quando a mesa ficar pronta.
 - Recepcao visualiza fila, mesas prontas, sugestao automatica de cliente compativel e chamada.
 - Ao chamar um cliente, a recepcao e o cliente acompanham um timer de 5 minutos; ao zerar, a recepcao recebe a opcao de excluir/remover o cliente da fila.

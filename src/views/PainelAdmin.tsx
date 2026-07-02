@@ -11,6 +11,8 @@ interface PainelAdminProps {
 }
 
 export function PainelAdmin({ mesas, funcionarios, configuracao, historico, onConfigurar }: PainelAdminProps) {
+  const linkClienteQr = `${window.location.origin}/#/cliente/rest-1`
+
   return (
     <main className="flex-1 bg-slate-50 p-4 sm:p-6">
       <div className="mx-auto max-w-7xl space-y-5">
@@ -20,6 +22,27 @@ export function PainelAdmin({ mesas, funcionarios, configuracao, historico, onCo
         </section>
 
         <DashboardRelatorios historico={historico} />
+
+        <section className="rounded-lg border border-teal-100 bg-white p-5 shadow-sm">
+          <p className="text-sm font-bold uppercase tracking-wide text-teal-700">QR Code do estabelecimento</p>
+          <h3 className="mt-1 text-xl font-black text-slate-950">Tela publica isolada do cliente</h3>
+          <p className="mt-2 max-w-3xl text-sm font-semibold text-slate-600">
+            Use este link para gerar o QR Code que fica na porta. Quem abrir esta URL ve apenas a tela do cliente,
+            sem acesso aos paineis de recepcao, garcom ou administrador.
+          </p>
+          <div className="mt-4 flex flex-col gap-3 rounded-lg bg-slate-50 p-3 sm:flex-row sm:items-center">
+            <code className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-white px-3 py-3 text-sm font-bold text-slate-800 ring-1 ring-slate-200">
+              {linkClienteQr}
+            </code>
+            <button
+              type="button"
+              onClick={() => navigator.clipboard?.writeText(linkClienteQr)}
+              className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white"
+            >
+              Copiar link
+            </button>
+          </div>
+        </section>
 
         <section className="grid gap-4 xl:grid-cols-[1fr_0.8fr]">
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
