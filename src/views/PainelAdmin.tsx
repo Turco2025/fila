@@ -95,7 +95,7 @@ export function PainelAdmin({
   }
 
   function removerMesa(mesa: Mesa) {
-    const confirmar = window.confirm(`Remover a Mesa ${mesa.numero_mesa}?`)
+    const confirmar = window.confirm(`Excluir a Mesa ${mesa.numero_mesa}?`)
 
     if (!confirmar) return
 
@@ -242,58 +242,51 @@ export function PainelAdmin({
               <p className="text-sm font-bold text-slate-500">{mesasOrdenadas.length} mesas</p>
             </div>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[820px] border-separate border-spacing-y-2 text-left text-sm">
-                <thead className="text-slate-500">
-                  <tr>
-                    <th className="px-3 py-2">Numero</th>
-                    <th className="px-3 py-2">Identificacao</th>
-                    <th className="px-3 py-2">Capacidade</th>
-                    <th className="px-3 py-2">Ideal</th>
-                    <th className="px-3 py-2">Setor</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2 text-right">Acoes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mesasOrdenadas.map((mesa) => (
-                    <tr key={mesa.id} className="bg-slate-50">
-                      <td className="rounded-l-lg px-3 py-3 font-black text-slate-950">{mesa.numero_mesa}</td>
-                      <td className="px-3 py-3">{mesa.nome_ou_identificacao}</td>
-                      <td className="px-3 py-3">{mesa.capacidade_maxima}</td>
-                      <td className="px-3 py-3">{mesa.quantidade_ideal_pessoas}</td>
-                      <td className="px-3 py-3">{mesa.setor_ou_area}</td>
-                      <td className="px-3 py-3">
-                        <BadgeStatus status={mesa.status_atual} />
-                      </td>
-                      <td className="rounded-r-lg px-3 py-3">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => carregarMesa(mesa)}
-                            className="rounded-lg bg-white px-3 py-2 text-xs font-black text-slate-700 ring-1 ring-slate-200"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removerMesa(mesa)}
-                            className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-black text-rose-700 ring-1 ring-rose-100"
-                          >
-                            Remover
-                          </button>
+              <div className="space-y-3">
+                {mesasOrdenadas.map((mesa) => (
+                  <article
+                    key={mesa.id}
+                    className="rounded-lg bg-slate-50 p-4 ring-1 ring-slate-100"
+                  >
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="text-lg font-black text-slate-950">Mesa {mesa.numero_mesa}</h4>
+                          <BadgeStatus status={mesa.status_atual} />
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {mesasOrdenadas.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="rounded-lg bg-slate-50 px-3 py-8 text-center font-bold text-slate-500">
-                        Nenhuma mesa cadastrada.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        <p className="mt-1 text-sm font-bold text-slate-600">{mesa.nome_ou_identificacao}</p>
+                        <div className="mt-3 grid gap-2 text-sm font-semibold text-slate-700 sm:grid-cols-4">
+                          <span>Capacidade: {mesa.capacidade_maxima}</span>
+                          <span>Ideal: {mesa.quantidade_ideal_pessoas}</span>
+                          <span>Setor: {mesa.setor_ou_area}</span>
+                          <span>{mesa.observacoes || 'Sem observacoes'}</span>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
+                        <button
+                          type="button"
+                          onClick={() => carregarMesa(mesa)}
+                          className="rounded-lg bg-white px-4 py-3 text-sm font-black text-slate-800 ring-1 ring-slate-200"
+                        >
+                          Editar mesa
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removerMesa(mesa)}
+                          className="rounded-lg bg-rose-600 px-4 py-3 text-sm font-black text-white hover:bg-rose-700"
+                        >
+                          Excluir mesa
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+                {mesasOrdenadas.length === 0 && (
+                  <div className="rounded-lg bg-slate-50 px-3 py-8 text-center font-bold text-slate-500">
+                    Nenhuma mesa cadastrada.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
