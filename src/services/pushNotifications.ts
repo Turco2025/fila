@@ -8,6 +8,9 @@ export type PushStatus =
   | 'denied'
   | 'error'
 
+const VAPID_PUBLIC_KEY_FALLBACK =
+  'BBq-NWYHeiilNtvmoJzp_3a8bGTNyK0RZWUNgVCe7x1-mNMgdGDhvDI1MQT_DsGnKFpytEA6tZgcBm46VGp-GEA'
+
 export function isPushSupported(): boolean {
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
 }
@@ -54,11 +57,21 @@ export async function enviarPushMesaPronta(clienteId: string, mesa: Mesa): Promi
 }
 
 async function getApplicationServerKey(): Promise<ArrayBuffer> {
-  const response = await fetch('/api/push/vapid-public-key')
-  if (!response.ok) throw new Error('Chave publica VAPID indisponivel.')
+  try {
+    const response = await fetch('/api/push/vapid-public-key')
 
-  const { publicKey } = (await response.json()) as { publicKey: string }
-  return urlBase64ToArrayBuffer(publicKey)
+    if (response.ok) {
+      const { publicKey } = (await response.json()) as { publicKey?: string }
+
+      if (publicKey) {
+        return urlBase64ToArrayBuffer(publicKey)
+      }
+    }
+  } catch {
+    // The public key is safe to expose in the browser. Keep the private key only on the server.
+  }
+
+  return urlBase64ToArrayBuffer(VAPID_PUBLIC_KEY_FALLBACK)
 }
 
 function urlBase64ToArrayBuffer(base64String: string): ArrayBuffer {
