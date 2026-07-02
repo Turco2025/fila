@@ -24,12 +24,15 @@ export function CardClienteFila({
   onExcluir,
 }: CardClienteFilaProps) {
   const [agora, setAgora] = useState(() => new Date())
+  const [mostrarCaixaExcluirCancelado, setMostrarCaixaExcluirCancelado] = useState(false)
   const tempoRestanteChamada = useMemo(
     () => calcularTempoRestanteChamada(cliente.horario_chamada, agora),
     [agora, cliente.horario_chamada],
   )
   const chamadaExpirada = cliente.status === 'chamado' && tempoRestanteChamada === 0
   const mostrarTimerChamada = cliente.status === 'chamado' && cliente.horario_chamada
+  const podeMarcarAusente = Boolean(onAusente && cliente.status !== 'cancelado' && cliente.status !== 'sentado')
+  const podeCancelarCliente = Boolean(onCancelar && cliente.status !== 'cancelado' && cliente.status !== 'sentado')
 
   useEffect(() => {
     if (!mostrarTimerChamada) return undefined
@@ -37,6 +40,11 @@ export function CardClienteFila({
     const intervalId = window.setInterval(() => setAgora(new Date()), 1000)
     return () => window.clearInterval(intervalId)
   }, [mostrarTimerChamada])
+
+  function handleCancelarCliente() {
+    onCancelar?.(cliente)
+    setMostrarCaixaExcluirCancelado(true)
+  }
 
   return (
     <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -101,6 +109,31 @@ export function CardClienteFila({
               )}
             </div>
           )}
+          {mostrarCaixaExcluirCancelado && cliente.status === 'cancelado' && onExcluir && (
+            <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-900 ring-1 ring-slate-200">
+              <p className="font-black">Cliente cancelado. Deseja excluir este cliente da fila?</p>
+              <p className="mt-1 font-semibold text-slate-600">
+                Se preferir manter o registro, clique em Cancelar. Para remover o card da fila, clique em Excluir.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMostrarCaixaExcluirCancelado(false)}
+                  className="rounded-lg bg-white px-4 py-3 text-sm font-black text-slate-700 ring-1 ring-slate-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onExcluir(cliente)}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-4 py-3 text-sm font-black text-white hover:bg-rose-700"
+                >
+                  <Trash2 size={17} aria-hidden="true" />
+                  Excluir
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2 sm:justify-end">
@@ -122,19 +155,19 @@ export function CardClienteFila({
               Cliente chegou
             </button>
           )}
-          {onAusente && (
+          {podeMarcarAusente && (
             <button
               type="button"
-              onClick={() => onAusente(cliente)}
+              onClick={() => onAusente?.(cliente)}
               className="rounded-lg bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 ring-1 ring-rose-100"
             >
               Ausente
             </button>
           )}
-          {onCancelar && (
+          {podeCancelarCliente && (
             <button
               type="button"
-              onClick={() => onCancelar(cliente)}
+              onClick={handleCancelarCliente}
               className="rounded-lg bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700"
             >
               Cancelar
