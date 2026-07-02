@@ -1,0 +1,56 @@
+# Tests
+
+## Test 1 - App loads and shows QR client screen [sanity]
+Viewport: desktop
+Description: Verifies the public client entry screen loads.
+
+Steps:
+1. Open the app
+2. Wait for the page to load
+3. Look for the queue registration form
+
+Expected: The "Entrar na fila" form is visible with name, WhatsApp, quantity and observations fields.
+
+## Test 2 - Client can enter the queue
+Viewport: mobile
+Description: Verifies a client can submit the QR queue form and see their waiting status.
+
+Steps:
+1. Open the app on mobile
+2. Fill the client queue form
+3. Tap "Entrar na fila agora"
+
+Expected: The client status screen appears and says the client is waiting to be called.
+
+## Test 3 - Reception panel shows queue and suggestions
+Viewport: desktop
+Description: Verifies staff can access the reception view.
+
+Steps:
+1. Open the app
+2. Click "Recepcao"
+3. Review the waiting list and ready-table section
+
+Expected: The reception panel shows clients in the queue and ready tables with suggested compatible clients.
+
+## Test 4 - Waiter panel shows table map
+Viewport: desktop
+Description: Verifies staff can access the waiter table map.
+
+Steps:
+1. Open the app
+2. Click "Garcom"
+3. Review the table cards
+
+Expected: The waiter panel shows table numbers, capacities, sectors and table statuses.
+
+## Test 5 - Admin panel shows reports and fit rules
+Viewport: desktop
+Description: Verifies the admin area exposes operational settings.
+
+Steps:
+1. Open the app
+2. Click "Admin"
+3. Review reports and queue compatibility settings
+
+Expected: The admin panel shows report cards, tables, employees and fit-rule controls.
